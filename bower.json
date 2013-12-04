@@ -1,0 +1,11 @@
+{
+  "name": "mixpanel-angular",
+  "version": "0.0.1",
+  "main": "./src/mixpanel-angular.js",
+  "dependencies": {
+    "angular": ">= 1.0.7"
+  },
+  "devDependencies": {
+    "angular-mocks": "~1.0.7"
+  }
+}
