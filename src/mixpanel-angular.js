@@ -3,58 +3,47 @@
 'use strict';
 
 angular.module('mixpanelAngular', [])
-  .directive('mpTrackOn', function(){
+  .directive('mpTrackOn', ['$parse', function($parse){
     var data = {};
 
     function isProperty(property){
-      return ['mpEventToTrack', 'mpExtraParams'].indexOf(property) != -1;
+      return ['mpEventToTrack', 'mpExtraParams', 'mpCallback'].indexOf(property) != -1;
     }
 
-    function getTrackType(attrs) {
-      var event = '';
-      switch (attrs['mpTrackOn']) {
-        case 'right-click':
-          event = 'contextmenu';
-          break;
-        default:
-          event = 'click';
-          break;
+    function getTrackType(event) {
+      if (event == 'right-click') {
+        return 'contextmenu';
+      } else {
+        return 'click';
       }
-      return event;
     }
 
-    function extractData(attrs, name) {
-      if (attrs[name] == 'mpEventToTrack') {
-        console.log('here');
-        console.log(attrs[name]);
+    function extractData(attrs, name, scope) {
+      if (name == 'mpEventToTrack') {
         data['event'] = attrs[name];
-      } else if (attrs[name] == 'mpExtraParams') {
+      } else if (name == 'mpExtraParams') {
         data['params'] = attrs[name];
+      } else if (name == 'mpCallback') {
+        data['callback'] = scope[attrs[name]];
       }
     }
-
-    var trackTypes = {
-      'right-click': function(event, params, callback) {
-        console.log(event);
-        console.log(params);
-        //window.mixpanel.track(params)
-      }
-    };
 
     return {
       restrict: 'A',
       scope: false,
       link: function($scope, $element, $attrs) {
-        $element.bind(getTrackType($attrs), function() {
-          angular.forEach($attrs.$attr, function(attr, name){
-            if (isProperty(name)) {
-              extractData($attrs, name);
-            }
+        var eventArray = $scope.$eval($attrs['mpTrackOn']);
+        for (var i in eventArray) {
+          $element.bind(getTrackType(eventArray[i]), function() {
+            angular.forEach($attrs.$attr, function(attr, name){
+              if (isProperty(name)) {
+                extractData($attrs, name, $scope);
+              }
+            });
+            mixpanel.track(data['event'], data['params'], data['callback'])
           });
-          trackTypes[$attrs['mpTrackOn']](data['event'], data['params']);
-        });
+        }
       }
     };
-  });
-
+  }]);
 })(angular);
