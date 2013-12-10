@@ -3,7 +3,7 @@
 'use strict';
 
 angular.module('mixpanelAngular', [])
-  .directive('mpTrackOn', ['$parse', function($parse){
+  .directive('mpTrackOn', function(){
     var data = {};
 
     function isProperty(property){
@@ -22,9 +22,9 @@ angular.module('mixpanelAngular', [])
       if (name == 'mpEventToTrack') {
         data['event'] = attrs[name];
       } else if (name == 'mpExtraParams') {
-        data['params'] = attrs[name];
+        data['params'] = scope.$eval(attrs[name]);
       } else if (name == 'mpCallback') {
-        data['callback'] = scope[attrs[name]];
+        data['callback'] = scope.$eval(attrs[name]);
       }
     }
 
@@ -40,10 +40,12 @@ angular.module('mixpanelAngular', [])
                 extractData($attrs, name, $scope);
               }
             });
-            mixpanel.track(data['event'], data['params'], data['callback'])
+            mixpanel.track(data['event'], data['params'], function() {
+              if (data['callback']) data['callback']();
+            });
           });
         }
       }
     };
-  }]);
+  });
 })(angular);
