@@ -1,8 +1,52 @@
 (function(angular) {
+
 'use strict';
 
-var mixpanelAngular = window.mixpanelAngular || (window.mixpanelAngular = {});
+angular.module('mixpanelAngular', [])
+  .directive('mpTrackOn', function(){
+    var data = {};
+    var attrArr = ['mpEventToTrack', 'mpExtraParams', 'mpCallback'];
 
-angular.module('mixpanelAngular', []);
+    function isProperty(property){
+      return attrArr.indexOf(property) != -1;
+    }
 
+    function getTrackType(event) {
+      if (event == 'right-click') {
+        return 'contextmenu';
+      } else {
+        return 'click';
+      }
+    }
+
+    function extractData(attrs, name, scope) {
+      if (name == 'mpEventToTrack') {
+        data.event = attrs[name];
+      } else if (name == 'mpExtraParams') {
+        data.params = scope.$eval(attrs[name]);
+      } else if (name == 'mpCallback') {
+        data.callback = scope.$eval(attrs[name]);
+      }
+    }
+
+    return {
+      restrict: 'A',
+      scope: false,
+      link: function($scope, $element, $attrs) {
+        var eventArray = $scope.$eval($attrs.mpTrackOn);
+        for (var i in eventArray) {
+          $element.bind(getTrackType(eventArray[i]), function() {
+            angular.forEach($attrs.$attr, function(attr, name){
+              if (isProperty(name)) {
+                extractData($attrs, name, $scope);
+              }
+            });
+            mixpanel.track(data.event, data.params, function() {
+              (data.callback || angular.noop)();
+            });
+          });
+        }
+      }
+    };
+  });
 })(angular);
