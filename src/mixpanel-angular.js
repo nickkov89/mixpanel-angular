@@ -5,9 +5,10 @@
 angular.module('mixpanelAngular', [])
   .directive('mpTrackOn', function(){
     var data = {};
+    var attrArr = ['mpEventToTrack', 'mpExtraParams', 'mpCallback'];
 
     function isProperty(property){
-      return ['mpEventToTrack', 'mpExtraParams', 'mpCallback'].indexOf(property) != -1;
+      return attrArr.indexOf(property) != -1;
     }
 
     function getTrackType(event) {
@@ -20,11 +21,11 @@ angular.module('mixpanelAngular', [])
 
     function extractData(attrs, name, scope) {
       if (name == 'mpEventToTrack') {
-        data['event'] = attrs[name];
+        data.event = attrs[name];
       } else if (name == 'mpExtraParams') {
-        data['params'] = scope.$eval(attrs[name]);
+        data.params = scope.$eval(attrs[name]);
       } else if (name == 'mpCallback') {
-        data['callback'] = scope.$eval(attrs[name]);
+        data.callback = scope.$eval(attrs[name]);
       }
     }
 
@@ -32,7 +33,7 @@ angular.module('mixpanelAngular', [])
       restrict: 'A',
       scope: false,
       link: function($scope, $element, $attrs) {
-        var eventArray = $scope.$eval($attrs['mpTrackOn']);
+        var eventArray = $scope.$eval($attrs.mpTrackOn);
         for (var i in eventArray) {
           $element.bind(getTrackType(eventArray[i]), function() {
             angular.forEach($attrs.$attr, function(attr, name){
@@ -40,8 +41,8 @@ angular.module('mixpanelAngular', [])
                 extractData($attrs, name, $scope);
               }
             });
-            mixpanel.track(data['event'], data['params'], function() {
-              if (data['callback']) data['callback']();
+            mixpanel.track(data.event, data.params, function() {
+              (data.callback || angular.noop)();
             });
           });
         }
